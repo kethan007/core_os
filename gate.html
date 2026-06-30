@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kethan's Website // GATE Tracker</title>
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='%23ffaa33' /%3E%3C/svg%3E">
+    <style>
+        /* =========================================
+           ULTRA-GLOSSY GATE SUBSYSTEM
+           ========================================= */
+        :root {
+            --bg-base: #050404;
+            --text-main: #ffffff;
+            --text-muted: #a39589;
+            --accent: #ffaa33;
+            --danger: #d46a6a;
+            --success: #6ad48a;
+
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-highlight: rgba(255, 255, 255, 0.35);
+            --glass-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+
+            --ease-smooth: cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .mono {
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- AMBIENT LIGHTS --- */
+        .ambient-glow {
+            position: fixed;
+            top: -10%;
+            right: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(255, 170, 50, 0.3) 0%, transparent 60%);
+            filter: blur(80px);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .glow-2 {
+            top: auto;
+            bottom: -10%;
+            left: -10%;
+            right: auto;
+            background: radial-gradient(circle, rgba(255, 100, 0, 0.2) 0%, transparent 60%);
+        }
+
+        /* --- NAVIGATION / BREADCRUMBS --- */
+        .internal-nav {
+            padding: 1.5rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(5, 4, 4, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .back-btn {
+            background: transparent;
+            border: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+
+        .back-btn:hover {
+            color: var(--text-main);
+        }
+
+        .breadcrumbs {
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bc-link {
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.2s;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .bc-link:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .bc-active {
+            color: var(--accent);
+        }
+
+        .bc-sep {
+            margin: 0 4px;
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* --- MAIN WORKSPACE --- */
+        .workspace {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 5% 8rem 5%;
+            position: relative;
+            z-index: 10;
+        }
+
+        .view-layer {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s var(--ease-smooth);
+        }
+
+        .view-layer.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .page-title {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 300;
+            letter-spacing: -0.03em;
+            margin-bottom: 1rem;
+            text-align: center;
+            text-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
+        }
+
+        .page-subtitle {
+            text-align: center;
+            color: var(--accent);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-bottom: 3rem;
+        }
+
+        /* --- GLOSSY PANELS & LISTS --- */
+        .panel {
+            background:
+                radial-gradient(circle at 100% 0%, rgba(255, 170, 50, 0.15) 0%, transparent 60%),
+                linear-gradient(rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.02)),
+                var(--glass-noise);
+            backdrop-filter: blur(40px) saturate(200%);
+            -webkit-backdrop-filter: blur(40px) saturate(200%);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+            border-radius: 24px;
+            padding: 2.5rem;
+            transition: all 0.4s var(--ease-smooth);
+            margin-bottom: 2rem;
+        }
+
+        .panel:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            background:
+                radial-gradient(circle at 100% 0%, rgba(255, 170, 50, 0.25) 0%, transparent 70%),
+                linear-gradient(rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.04)),
+                var(--glass-noise);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.9), inset 0 2px 2px rgba(255, 255, 255, 0.6);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 1rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Overall Progress UI */
+        .overall-progress-container {
+            margin-bottom: 3rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .op-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent);
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.25, 1, 0.2, 1);
+            box-shadow: 0 0 15px var(--accent);
+        }
+
+        /* List Items */
+        .list-item {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 18px 24px;
+            border: 1px solid var(--glass-border);
+            margin-bottom: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .list-item:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: radial-gradient(circle at bottom, rgba(255, 170, 50, 0.2) 0%, rgba(255, 255, 255, 0.06) 100%);
+            transform: scale(1.04) translateY(-4px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+        }
+
+        .item-main-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .item-name {
+            font-size: 1.15rem;
+            font-weight: 400;
+            flex: 1;
+        }
+
+        .item-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Glass Checkbox */
+        .glass-check {
+            width: 24px;
+            height: 24px;
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            margin-right: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: 0.2s;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-check.checked {
+            background: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(212, 154, 106, 0.5);
+        }
+
+        .glass-check.checked::after {
+            content: '✓';
+            color: #000;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        /* Resources (Files) */
+        .resource-item {
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.01);
+            margin-bottom: 8px;
+            border: 1px solid transparent;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .resource-item:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: radial-gradient(circle at bottom, rgba(255, 170, 50, 0.15) 0%, rgba(255, 255, 255, 0.04) 100%);
+            transform: scale(1.02) translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+        }
+
+        .icon {
+            font-size: 1.4rem;
+        }
+
+        .resource-details {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .resource-size {
+            font-size: 0.7rem;
+            color: var(--accent);
+            margin-top: 2px;
+        }
+
+        .view-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 500;
+        }
+
+        .view-btn:hover {
+            background: var(--accent);
+            color: black;
+        }
+
+        /* --- EDIT MODE CONTROLS --- */
+        .edit-controls {
+            display: none;
+            gap: 8px;
+            margin-left: 15px;
+            border-left: 1px solid var(--glass-border);
+            padding-left: 15px;
+        }
+
+        .edit-mode .edit-controls {
+            display: flex;
+        }
+
+        .edit-mode .list-item:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .edit-mode .view-btn {
+            display: none;
+        }
+
+        .btn-icon {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            border-radius: 8px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.05);
+        }
+
+        .btn-icon.del:hover {
+            background: rgba(212, 106, 106, 0.3);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .add-btn {
+            width: 100%;
+            padding: 16px;
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            color: var(--text-muted);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .edit-mode .add-btn {
+            display: flex;
+        }
+
+        .add-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-main);
+            border-color: var(--accent);
+        }
+
+        /* --- CUSTOM GLASS MODAL --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-box {
+            background: rgba(15, 12, 11, 0.8);
+            backdrop-filter: blur(50px) saturate(200%);
+            -webkit-backdrop-filter: blur(50px) saturate(200%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+            border-radius: 24px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 450px;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .modal-overlay.active .modal-box {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-title {
+            font-weight: 300;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .modal-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .modal-input:focus {
+            border-color: var(--accent);
+        }
+
+        .file-drop-area {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 2rem 1rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.02);
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .file-drop-area:hover {
+            border-color: var(--accent);
+            background: rgba(212, 154, 106, 0.05);
+        }
+
+        .file-drop-area input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-msg {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: 0.2s;
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-confirm {
+            background: var(--accent);
+            color: black;
+        }
+
+        .btn-confirm:hover {
+            background: #e0ab82;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(212, 154, 106, 0.3);
+        }
+
+        /* --- FLOATING EDIT BUTTON --- */
+        .fab-container {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            z-index: 1000;
+        }
+
+        .fab {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(40px) saturate(250%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.4);
+            color: var(--text-main);
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .fab:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px);
+        }
+
+        .fab.active {
+            background: var(--accent);
+            color: var(--bg-base);
+            border-color: transparent;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="ambient-glow"></div>
+    <div class="ambient-glow glow-2"></div>
+
+    <nav class="internal-nav">
+        <button class="back-btn" onclick="window.location.href='index.html'">← Main OS</button>
+        <div class="breadcrumbs" id="breadcrumb-container"></div>
+        <div style="width: 70px;"></div>
+    </nav>
+
+    <main class="workspace">
+
+        <div id="view-dashboard" class="view-layer active">
+            <h1 class="page-title">GATE Core Engine</h1>
+            <div class="page-subtitle">Preparation Tracker</div>
+
+            <div class="overall-progress-container">
+                <div class="op-header">
+                    <span>Total Syllabus Completion</span>
+                    <span class="mono" id="total-progress-text">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="total-progress-bar"></div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="panel">
+                    <div class="panel-header"><span>Syllabus Tracker</span></div>
+                    <div id="subjects-list"></div>
+                    <button class="add-btn" onclick="openModal('subject')">+ Add Subject</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header"><span>Archive Vault</span></div>
+                    <div id="archives-list"></div>
+                    <button class="add-btn" onclick="openModal('archive')">+ Add Archive Folder</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-subject" class="view-layer">
+            <h1 class="page-title" id="subject-view-title">Subject Name</h1>
+
+            <div class="overall-progress-container" style="max-width: 600px; margin: 0 auto 3rem auto;">
+                <div class="op-header">
+                    <span>Subject Progress</span>
+                    <span class="mono" id="sub-progress-text">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="sub-progress-bar"></div>
+                </div>
+            </div>
+
+            <div class="panel" id="chapters-list"></div>
+            <button class="add-btn" onclick="openModal('chapter')">+ Add Chapter</button>
+        </div>
+
+        <div id="view-resources" class="view-layer">
+            <h1 class="page-title" id="resource-view-title">Resources</h1>
+            <div class="page-subtitle" id="resource-view-subtitle">Vault</div>
+
+            <div class="panel" style="max-width: 800px; margin: 0 auto;">
+                <h3 class="panel-header"
+                    style="border: none; justify-content: center; font-size: 0.8rem; color: var(--text-muted);">Attached
+                    Files & Documents</h3>
+                <div id="resources-list"></div>
+                <button class="add-btn" onclick="openModal('resource')">+ Upload PDF / Note / Photo</button>
+            </div>
+        </div>
+
+    </main>
+
+    <div class="fab-container">
+        <button class="fab" id="edit-fab" onclick="toggleEditMode()">
+            <span id="fab-icon">✎</span> <span id="fab-text">Edit Mode</span>
+        </button>
+    </div>
+
+    <div class="modal-overlay" id="glass-modal">
+        <div class="modal-box">
+            <h2 class="modal-title" id="modal-title">Add Item</h2>
+            <input type="text" class="modal-input" id="modal-input-name" placeholder="Name..." autocomplete="off" />
+
+            <div id="modal-file-section" style="display: none;">
+                <div class="file-drop-area">
+                    <input type="file" id="modal-input-file" onchange="updateFileMsg(this)">
+                    <span class="file-msg" id="file-msg-text">Click or drag file here to upload</span>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-confirm" onclick="confirmModal()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let defaultGateDb = {
+            subjects: {
+                "sub1": {
+                    name: "Engineering Mathematics",
+                    chapters: {
+                        "ch1": { name: "Linear Algebra", completed: true, resources: [{ id: 'r1', name: 'Matrix_CheatSheet', type: 'pdf', size: '1.2MB', url: null }] },
+                        "ch2": { name: "Calculus", completed: false, resources: [] }
+                    }
+                },
+                "sub2": {
+                    name: "Digital Logic Systems",
+                    chapters: { "ch3": { name: "Boolean Algebra", completed: false, resources: [] } }
+                }
+            },
+            archives: {
+                "arc1": { name: "Previous Year Papers (18-25)", resources: [{ id: 'a1', name: 'GATE_2024_Paper', type: 'pdf', size: '4.5MB', url: null }] }
+            }
+        };
+
+        let db = JSON.parse(localStorage.getItem('core_os_gate_db')) || defaultGateDb;
+        let currentState = { level: 'dashboard', activeId: null, activeChId: null, mode: null, isEditing: false };
+        let modalContext = { action: null, type: null, editId: null };
+
+        /* ==========================================================
+           PROGRESS CALCULATORS
+           ========================================================== */
+
+        function getSubjectProgress(subId) {
+            const chapters = Object.values(db.subjects[subId].chapters);
+            if (chapters.length === 0) return 0;
+            const completed = chapters.filter(c => c.completed).length;
+            return Math.round((completed / chapters.length) * 100);
+        }
+
+        function getTotalProgress() {
+            let totalCh = 0; let compCh = 0;
+            Object.values(db.subjects).forEach(sub => {
+                const chapters = Object.values(sub.chapters);
+                totalCh += chapters.length;
+                compCh += chapters.filter(c => c.completed).length;
+            });
+            return totalCh === 0 ? 0 : Math.round((compCh / totalCh) * 100);
+        }
+
+        /* ==========================================================
+           CORE RENDER ENGINE
+           ========================================================== */
+
+        function render() {
+            document.querySelectorAll('.view-layer').forEach(el => el.classList.remove('active'));
+            document.getElementById(`view-${currentState.level}`).classList.add('active');
+
+            const workspace = document.querySelector('.workspace');
+            currentState.isEditing ? workspace.classList.add('edit-mode') : workspace.classList.remove('edit-mode');
+
+            updateBreadcrumbs();
+            updateFab();
+
+            if (currentState.level === 'dashboard') renderDashboard();
+            else if (currentState.level === 'subject') renderSubjectView();
+            else if (currentState.level === 'resources') renderResources();
+
+            // Save adjustments to browser local engine storage automatically
+            localStorage.setItem('core_os_gate_db', JSON.stringify(db));
+            if (typeof notifySyncEngineOfChange === 'function') notifySyncEngineOfChange();
+        }
+
+        function updateBreadcrumbs() {
+            const bc = document.getElementById('breadcrumb-container');
+            let html = `<span class="bc-link ${currentState.level === 'dashboard' ? 'bc-active' : ''}" onclick="navTo('dashboard')">GATE Hub</span>`;
+
+            if (currentState.activeId) {
+                const active = currentState.level === 'subject' || currentState.mode === 'archive' ? 'bc-active' : '';
+                const name = currentState.mode === 'subject' ? db.subjects[currentState.activeId].name : db.archives[currentState.activeId].name;
+                html += `<span class="bc-sep">/</span> <span class="bc-link ${active}" onclick="navTo('${currentState.mode === 'subject' ? 'subject' : 'resources'}', '${currentState.mode}', '${currentState.activeId}')">${name}</span>`;
+            }
+            if (currentState.activeChId && currentState.mode === 'subject') {
+                html += `<span class="bc-sep">/</span> <span class="bc-link bc-active">${db.subjects[currentState.activeId].chapters[currentState.activeChId].name}</span>`;
+            }
+            bc.innerHTML = html;
+        }
+
+        function updateFab() {
+            const fabText = document.getElementById('fab-text');
+            const fab = document.getElementById('edit-fab');
+            if (currentState.isEditing) { fabText.innerText = "Done Editing"; fab.classList.add('active'); }
+            else { fabText.innerText = "Edit Mode"; fab.classList.remove('active'); }
+        }
+
+        /* ==========================================================
+           LAYER RENDERERS
+           ========================================================== */
+
+        function renderDashboard() {
+            const totalProg = getTotalProgress();
+            document.getElementById('total-progress-text').innerText = `${totalProg}%`;
+            document.getElementById('total-progress-bar').style.width = `${totalProg}%`;
+
+            const subContainer = document.getElementById('subjects-list');
+            subContainer.innerHTML = '';
+            for (const [id, sub] of Object.entries(db.subjects)) {
+                const prog = getSubjectProgress(id);
+                subContainer.innerHTML += `
+                    <div class="list-item" onclick="if(!currentState.isEditing) navTo('subject', 'subject', '${id}')">
+                        <div class="item-main-row">
+                            <div class="item-name">${sub.name}</div>
+                            <div class="item-meta mono" style="margin-right: 15px;">${prog}%</div>
+                            <div class="edit-controls" onclick="event.stopPropagation()">
+                                <button class="btn-icon" onclick="openModal('subject', 'edit', '${id}')">✎</button>
+                                <button class="btn-icon del" onclick="deleteItem('subject', '${id}')">×</button>
+                            </div>
+                        </div>
+                        <div class="progress-track" style="margin-top: 10px; height: 4px;"><div class="progress-fill" style="width: ${prog}%;"></div></div>
+                    </div>`;
+            }
+
+            const arcContainer = document.getElementById('archives-list');
+            arcContainer.innerHTML = '';
+            for (const [id, arc] of Object.entries(db.archives)) {
+                arcContainer.innerHTML += `
+                    <div class="list-item" onclick="if(!currentState.isEditing) navTo('resources', 'archive', '${id}')">
+                        <div class="item-main-row">
+                            <div class="item-name">📁 ${arc.name}</div>
+                            <div class="item-meta mono" style="margin-right: 15px;">// ${arc.resources.length} Files</div>
+                            <div class="edit-controls" onclick="event.stopPropagation()">
+                                <button class="btn-icon" onclick="openModal('archive', 'edit', '${id}')">✎</button>
+                                <button class="btn-icon del" onclick="deleteItem('archive', '${id}')">×</button>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        function renderSubjectView() {
+            const sub = db.subjects[currentState.activeId];
+            document.getElementById('subject-view-title').innerText = sub.name;
+
+            const prog = getSubjectProgress(currentState.activeId);
+            document.getElementById('sub-progress-text').innerText = `${prog}%`;
+            document.getElementById('sub-progress-bar').style.width = `${prog}%`;
+
+            const container = document.getElementById('chapters-list');
+            container.innerHTML = '';
+
+            for (const [id, ch] of Object.entries(sub.chapters)) {
+                const resCount = ch.resources.length;
+                container.innerHTML += `
+                    <div class="list-item" onclick="if(!currentState.isEditing) navTo('resources', 'subject', '${currentState.activeId}', '${id}')">
+                        <div class="item-main-row">
+                            <div class="glass-check ${ch.completed ? 'checked' : ''}" onclick="toggleChapter(event, '${id}')"></div>
+                            <div class="item-name" style="${ch.completed ? 'opacity: 0.5; text-decoration: line-through;' : ''}">${ch.name}</div>
+                            <div class="item-meta mono" style="margin-right: 15px;">// ${resCount} Res</div>
+                            <div class="edit-controls" onclick="event.stopPropagation()">
+                                <button class="btn-icon" onclick="openModal('chapter', 'edit', '${id}')">✎</button>
+                                <button class="btn-icon del" onclick="deleteItem('chapter', '${id}')">×</button>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+            if (Object.keys(sub.chapters).length === 0) container.innerHTML = `<div class="item-meta" style="text-align:center;">No chapters added.</div>`;
+        }
+
+        function renderResources() {
+            let resArray = [];
+            if (currentState.mode === 'subject') {
+                const ch = db.subjects[currentState.activeId].chapters[currentState.activeChId];
+                document.getElementById('resource-view-title').innerText = ch.name;
+                document.getElementById('resource-view-subtitle').innerText = "Chapter Vault";
+                resArray = ch.resources;
+            } else {
+                const arc = db.archives[currentState.activeId];
+                document.getElementById('resource-view-title').innerText = arc.name;
+                document.getElementById('resource-view-subtitle').innerText = "Archive Vault";
+                resArray = arc.resources;
+            }
+
+            const container = document.getElementById('resources-list');
+            container.innerHTML = '';
+
+            resArray.forEach(res => {
+                const icon = res.type === 'pdf' ? '📄' : res.type === 'img' ? '🖼️' : '📝';
+                const viewAction = res.url ? `window.open('${res.url}', '_blank')` : `alert('Simulation: Open file ${res.name}')`;
+
+                container.innerHTML += `
+                    <div class="resource-item">
+                        <span class="icon">${icon}</span>
+                        <div class="resource-details">
+                            <span class="item-name mono" style="font-size:0.95rem;">${res.name}</span>
+                            <span class="resource-size mono">${res.size}</span>
+                        </div>
+                        <button class="view-btn" onclick="${viewAction}">View</button>
+                        <div class="edit-controls">
+                            <button class="btn-icon" onclick="openModal('resource', 'edit', '${res.id}')" style="width:28px; height:28px;">✎</button>
+                            <button class="btn-icon del" onclick="deleteItem('resource', '${res.id}')" style="width:28px; height:28px;">×</button>
+                        </div>
+                    </div>`;
+            });
+            if (resArray.length === 0) container.innerHTML = `<div class="item-meta" style="text-align:center; padding:20px;">Vault is empty.</div>`;
+        }
+
+        /* ==========================================================
+           INTERACTIONS & MODAL
+           ========================================================== */
+
+        function navTo(level, mode = null, id = null, chId = null) {
+            currentState.level = level;
+            if (mode) currentState.mode = mode;
+            if (id) currentState.activeId = id;
+            if (chId) currentState.activeChId = chId;
+            currentState.isEditing = false;
+            render();
+        }
+
+        function toggleEditMode() { currentState.isEditing = !currentState.isEditing; render(); }
+
+        function toggleChapter(event, chId) {
+            event.stopPropagation();
+            if (currentState.isEditing) return;
+            const ch = db.subjects[currentState.activeId].chapters[chId];
+            ch.completed = !ch.completed;
+            render();
+        }
+
+        function generateId() { return '_' + Math.random().toString(36).substr(2, 9); }
+        function formatBytes(bytes, decimals = 1) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024; const dm = decimals < 0 ? 0 : decimals; const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        function updateFileMsg(input) {
+            const msg = document.getElementById('file-msg-text');
+            const nameInput = document.getElementById('modal-input-name');
+            if (input.files && input.files.length > 0) {
+                const file = input.files[0];
+                msg.innerText = file.name + ` (${formatBytes(file.size)})`;
+                if (nameInput.value === '') nameInput.value = file.name.split('.').slice(0, -1).join('.') || file.name;
+            } else { msg.innerText = "Click or drag file here to upload"; }
+        }
+
+        function openModal(type, action = 'add', editId = null) {
+            modalContext = { action, type, editId };
+            const modal = document.getElementById('glass-modal');
+            const title = document.getElementById('modal-title');
+            const nameInput = document.getElementById('modal-input-name');
+            const fileSec = document.getElementById('modal-file-section');
+
+            nameInput.value = ''; document.getElementById('modal-input-file').value = '';
+            document.getElementById('file-msg-text').innerText = "Click or drag file here to upload";
+
+            if (action === 'add') {
+                title.innerText = type === 'resource' ? "Upload File" : `New ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+                fileSec.style.display = type === 'resource' ? 'block' : 'none';
+            } else if (action === 'edit') {
+                title.innerText = "Rename Item"; fileSec.style.display = 'none';
+                let obj;
+                if (type === 'subject') obj = db.subjects[editId];
+                else if (type === 'archive') obj = db.archives[editId];
+                else if (type === 'chapter') obj = db.subjects[currentState.activeId].chapters[editId];
+                else {
+                    const arr = currentState.mode === 'subject' ? db.subjects[currentState.activeId].chapters[currentState.activeChId].resources : db.archives[currentState.activeId].resources;
+                    obj = arr.find(r => r.id === editId);
+                }
+                if (obj) nameInput.value = obj.name;
+            }
+            modal.classList.add('active'); nameInput.focus();
+        }
+
+        function closeModal() { document.getElementById('glass-modal').classList.remove('active'); }
+
+        async function confirmModal() {
+            const name = document.getElementById('modal-input-name').value.trim();
+            const fileInput = document.getElementById('modal-input-file');
+            if (!name) return alert("Please provide a name.");
+
+            if (modalContext.action === 'add') {
+                if (modalContext.type === 'subject') db.subjects[generateId()] = { name: name, chapters: {} };
+                else if (modalContext.type === 'archive') db.archives[generateId()] = { name: name, resources: [] };
+                else if (modalContext.type === 'chapter') db.subjects[currentState.activeId].chapters[generateId()] = { name: name, completed: false, resources: [] };
+                else if (modalContext.type === 'resource') {
+                    if (fileInput.files && fileInput.files.length > 0) {
+                        closeModal();
+                        const file = fileInput.files[0];
+                        try {
+                            const driveFile = await uploadRawFileToDrive(file, name);
+                            const newRes = { id: generateId(), name: name, type: file.type.includes('pdf') ? 'pdf' : 'img', size: formatBytes(file.size), url: driveFile.webViewLink };
+                            if (currentState.mode === 'subject') db.subjects[currentState.activeId].chapters[currentState.activeChId].resources.push(newRes);
+                            else db.archives[currentState.activeId].resources.push(newRes);
+                            render();
+                        } catch (e) {
+                            alert("Failed to upload to Google Drive");
+                        }
+                        return;
+                    }
+                }
+            }
+            else if (modalContext.action === 'edit') {
+                let obj;
+                if (modalContext.type === 'subject') obj = db.subjects[modalContext.editId];
+                else if (modalContext.type === 'archive') obj = db.archives[modalContext.editId];
+                else if (modalContext.type === 'chapter') obj = db.subjects[currentState.activeId].chapters[modalContext.editId];
+                else {
+                    const arr = currentState.mode === 'subject' ? db.subjects[currentState.activeId].chapters[currentState.activeChId].resources : db.archives[currentState.activeId].resources;
+                    obj = arr.find(r => r.id === modalContext.editId);
+                }
+                if (obj) obj.name = name;
+            }
+            closeModal(); render();
+        }
+
+        function deleteItem(type, id) {
+            if (!confirm("Permanently delete this?")) return;
+            if (type === 'subject') delete db.subjects[id];
+            else if (type === 'archive') delete db.archives[id];
+            else if (type === 'chapter') delete db.subjects[currentState.activeId].chapters[id];
+            else {
+                if (currentState.mode === 'subject') {
+                    let arr = db.subjects[currentState.activeId].chapters[currentState.activeChId].resources;
+                    let resToDelete = arr.find(r => r.id === id);
+                    if (resToDelete && resToDelete.url && typeof deleteFileFromDrive === 'function') deleteFileFromDrive(resToDelete.url);
+                    db.subjects[currentState.activeId].chapters[currentState.activeChId].resources = arr.filter(r => r.id !== id);
+                } else {
+                    let arr = db.archives[currentState.activeId].resources;
+                    let resToDelete = arr.find(r => r.id === id);
+                    if (resToDelete && resToDelete.url && typeof deleteFileFromDrive === 'function') deleteFileFromDrive(resToDelete.url);
+                    db.archives[currentState.activeId].resources = arr.filter(r => r.id !== id);
+                }
+            }
+            render();
+        }
+
+        window.onCloudSyncData = function () {
+            db = JSON.parse(localStorage.getItem('core_os_gate_db')) || defaultGateDb;
+            render();
+        };
+
+        // Initialize App
+        render();
+    </script>
+    <script src="sync.js"></script>
+</body>
+
+</html>

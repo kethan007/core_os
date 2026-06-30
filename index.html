@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kethan's Website</title>
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='%23ffaa33' /%3E%3C/svg%3E">
+    <style>
+        /* =========================================
+           iOS / VISION PRO GLOSSY GLASS THEME
+           ========================================= */
+        :root {
+            --bg-base: #050404;
+            --text-main: #ffffff;
+            --text-muted: #a39589;
+            --accent: #ffaa33;
+
+            /* Glass variables for reuse */
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-highlight: rgba(255, 255, 255, 0.35);
+            --glass-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+
+            --ease-smooth: cubic-bezier(0.25, 1, 0.5, 1);
+            --ease-snappy: cubic-bezier(0.77, 0, 0.175, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .mono {
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- BACKGROUND AMBIENT LIGHTS (FOR GLASS REFRACTION) --- */
+        .ambient-glow {
+            position: fixed;
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(255, 170, 50, 0.3) 0%, transparent 60%);
+            filter: blur(80px);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .glow-2 {
+            top: auto;
+            bottom: -20%;
+            left: auto;
+            right: -10%;
+            background: radial-gradient(circle, rgba(255, 100, 0, 0.2) 0%, transparent 60%);
+        }
+
+        /* --- THE CURTAIN TRANSITION --- */
+        .curtain {
+            position: fixed;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: #0a0807;
+            z-index: 9000;
+            transition: top 0.7s var(--ease-snappy);
+            border-top: 1px solid var(--accent);
+        }
+
+        /* --- PAGE ROUTING --- */
+        .page {
+            display: none;
+            min-height: 100vh;
+            transition: transform 0.5s var(--ease-smooth), opacity 0.5s var(--ease-smooth);
+            transform-origin: center 20%;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Removed transform from active state to fix fixed/sticky bugs */
+        .page.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .page.exiting {
+            transform: scale(0.95);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* --- TYPEWRITER CURSOR --- */
+        .typewriter-cursor {
+            display: inline-block;
+            color: var(--accent);
+            animation: blink 1s step-end infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* --- SCROLL REVEAL --- */
+        .reveal-up {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 1s var(--ease-smooth), transform 1s var(--ease-smooth);
+        }
+
+        .reveal-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* =========================================
+           SLIDING STICKY ARCHITECTURE (BUG FIX)
+           ========================================= */
+
+        /* The Hero stays pinned to the top automatically */
+        .sticky-hero {
+            position: sticky;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .hero-greeting {
+            font-size: clamp(3rem, 6vw, 6rem);
+            font-weight: 300;
+            letter-spacing: -0.03em;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            min-height: 1.2em;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .hero-time {
+            font-size: 0.9rem;
+            color: var(--accent);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            opacity: 0;
+            transition: opacity 1s var(--ease-smooth);
+            transform: translateY(10px);
+        }
+
+        .hero-time.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* The Dashboard slides naturally over the sticky hero */
+        .content-overlay {
+            position: relative;
+            z-index: 10;
+            background: transparent;
+            min-height: 100vh;
+            padding-top: 2rem;
+        }
+
+        /* --- ULTRA-GLOSSY NOTCH --- */
+        .notch-container {
+            position: sticky;
+            top: 20px;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 4rem;
+            pointer-events: none;
+        }
+
+        .floating-notch {
+            pointer-events: auto;
+            background: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)), var(--glass-noise);
+            backdrop-filter: blur(40px) saturate(250%);
+            -webkit-backdrop-filter: blur(40px) saturate(250%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid var(--glass-highlight);
+            /* Strong light reflection on top edge */
+            border-radius: 50px;
+            padding: 6px 10px;
+            display: flex;
+            gap: 5px;
+            box-shadow:
+                inset 0 2px 2px rgba(255, 255, 255, 0.4),
+                0 30px 60px rgba(0, 0, 0, 0.7);
+            transition: all 0.4s var(--ease-smooth);
+        }
+
+        .floating-notch:hover {
+            transform: scale(1.04) translateY(-2px);
+            background:
+                radial-gradient(circle at 50% 100%, rgba(255, 170, 50, 0.2) 0%, transparent 60%),
+                linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)),
+                var(--glass-noise);
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow:
+                inset 0 2px 2px rgba(255, 255, 255, 0.6),
+                0 40px 80px rgba(0, 0, 0, 0.9);
+        }
+
+        .notch-btn {
+            background: transparent;
+            color: rgba(255, 255, 255, 0.6);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 500;
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .notch-btn:hover {
+            color: #fff;
+            background: radial-gradient(circle at bottom, rgba(255, 170, 50, 0.3) 0%, rgba(255, 255, 255, 0.15) 100%);
+            transform: scale(1.1) translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+        }
+
+        .notch-btn:active {
+            transform: scale(0.92) translateY(0);
+            box-shadow: none;
+        }
+
+        /* --- INTERNAL NAV --- */
+        .internal-nav {
+            padding: 2rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(5, 4, 4, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .back-btn {
+            background: transparent;
+            border: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+
+        .back-btn:hover {
+            color: var(--text-main);
+        }
+
+        .page-title {
+            color: var(--accent);
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        /* --- LAYOUTS & PANELS --- */
+        .page-header-large {
+            padding: 4rem 5%;
+            padding-bottom: 1rem;
+        }
+
+        .page-header-title {
+            font-size: clamp(2rem, 4vw, 4rem);
+            font-weight: 300;
+            letter-spacing: -0.02em;
+        }
+
+        .workspace {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 5%;
+            padding-bottom: 5rem;
+        }
+
+        /* Glossy Glass Panels */
+        .panel {
+            background:
+                radial-gradient(circle at 100% 0%, rgba(255, 170, 50, 0.15) 0%, transparent 60%),
+                linear-gradient(rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.02)),
+                var(--glass-noise);
+            backdrop-filter: blur(40px) saturate(200%);
+            -webkit-backdrop-filter: blur(40px) saturate(200%);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            /* Top light reflection */
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+            border-radius: 24px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            transition: all 0.4s var(--ease-smooth);
+        }
+
+        .panel:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            background:
+                radial-gradient(circle at 100% 0%, rgba(255, 170, 50, 0.25) 0%, transparent 70%),
+                linear-gradient(rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.04)),
+                var(--glass-noise);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.9), inset 0 2px 2px rgba(255, 255, 255, 0.6);
+        }
+
+        .panel-header {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 1rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .floating-notch {
+                flex-wrap: wrap;
+                justify-content: center;
+                border-radius: 20px;
+            }
+        }
+
+        /* Glossy Buttons & Inputs */
+        button.action-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.2s;
+            font-size: 0.8rem;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+        }
+
+        button.action-btn:hover {
+            border-color: var(--accent);
+            background: rgba(212, 154, 106, 0.2);
+            transform: scale(1.05);
+        }
+
+        textarea,
+        input[type="text"] {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(0, 0, 0, 0.5);
+            /* Inset illusion */
+            color: var(--text-main);
+            border-radius: 12px;
+            outline: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 400px;
+            padding: 1.5rem;
+            line-height: 1.6;
+            resize: none;
+            border-radius: 20px;
+        }
+
+        textarea:focus,
+        input[type="text"]:focus {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Glass List Items */
+        .list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            border: 1px solid var(--glass-border);
+            margin-bottom: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .list-item:hover {
+            transform: translateX(4px);
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .cal-date-huge {
+            font-size: 4.5rem;
+            font-weight: 200;
+            color: var(--text-main);
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.04em;
+        }
+
+        .schedule-line {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+
+        .schedule-time {
+            color: var(--accent);
+            width: 50px;
+            flex-shrink: 0;
+            font-weight: 500;
+        }
+
+        .schedule-event {
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="lock-screen"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: #050404; z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(50px); transition: opacity 0.5s ease;">
+        <div class="ambient-glow"></div>
+        <h2
+            style="font-weight: 300; margin-bottom: 30px; letter-spacing: 0.2em; font-size: 1.5rem; color: var(--accent);">
+            CORE_OS // LOCKED</h2>
+
+        <input type="password" id="os-passcode" placeholder="Enter Passcode..."
+            style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 14px 24px; border-radius: 12px; outline: none; text-align: center; margin-bottom: 20px; font-family: monospace; letter-spacing: 0.1em; width: 250px; backdrop-filter: blur(10px);"
+            onkeypress="if(event.key === 'Enter') unlockOS()">
+
+        <button onclick="unlockOS()"
+            style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 10px 30px; border-radius: 30px; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.8rem;">Authenticate</button>
+    </div>
+
+    <script>
+        // 1. Check if device is already remembered on boot
+        document.addEventListener("DOMContentLoaded", () => {
+            if (localStorage.getItem("core_os_auth") === "granted") {
+                document.getElementById('lock-screen').style.display = "none";
+            }
+        });
+
+        // 2. Validate passcode and remember device
+        function unlockOS() {
+            const pass = document.getElementById('os-passcode').value;
+
+            // CHANGE THIS PASSCODE
+            if (pass === "kethan123") {
+                // Save the token to the browser
+                localStorage.setItem("core_os_auth", "granted");
+
+                // Fade out the lock screen
+                const lockScreen = document.getElementById('lock-screen');
+                lockScreen.style.opacity = "0";
+                lockScreen.style.pointerEvents = "none";
+                setTimeout(() => { lockScreen.style.display = "none"; }, 500);
+            } else {
+                document.getElementById('os-passcode').style.borderColor = "#d46a6a";
+                document.getElementById('os-passcode').value = "";
+                document.getElementById('os-passcode').placeholder = "ACCESS DENIED";
+            }
+        }
+    </script>
+
+    <div class="ambient-glow"></div>
+    <div class="ambient-glow glow-2"></div>
+
+    <div class="curtain" id="curtain"></div>
+
+    <div id="page-home" class="page active">
+
+        <section class="sticky-hero" id="hero-sec">
+            <h1 class="hero-greeting" id="greeting-display"></h1>
+            <div class="hero-time mono" id="time-display">Loading...</div>
+        </section>
+
+        <div class="content-overlay">
+
+            <div class="notch-container">
+                <nav class="floating-notch reveal-up" style="transition-delay: 0.2s;">
+                    <button class="notch-btn" onclick="netflixTransition(event, 'academic.html')">Academic</button>
+                    <button class="notch-btn" onclick="netflixTransition(event, 'gate.html')">Gateprep</button>
+                    <button class="notch-btn" onclick="netflixTransition(event, 'projects.html')">Projects</button>
+                    <button class="notch-btn" onclick="netflixTransition(event, 'matrix.html')">Matrix</button>
+                </nav>
+            </div>
+
+            <main class="workspace reveal-up" style="transition-delay: 0.3s;">
+                <div class="grid-2">
+                    <div class="panel">
+                        <div class="panel-header" style="border: none; margin-bottom: 0;">Today</div>
+                        <div class="cal-date-huge" id="cal-date">-- ---</div>
+                        <div class="mono text-xs" style="color: var(--text-muted); letter-spacing: 0.1em;" id="cal-day">
+                            -- // LOCAL</div>
+
+                        <div class="schedule-line">
+                            <div class="schedule-time mono text-xs">09:00</div>
+                            <div class="schedule-event">Review GATE Mathematics Syllabus</div>
+                        </div>
+                        <div class="schedule-line">
+                            <div class="schedule-time mono text-xs">14:30</div>
+                            <div class="schedule-event">VL53L1X Sensor Calibration Lab</div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-header">Daily Execution</div>
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                            <input type="text" id="task-input" placeholder="Quick add task..."
+                                style="flex:1; padding: 12px;" onkeypress="if(event.key === 'Enter') addTask()">
+                            <button class="action-btn" onclick="addTask()">Add</button>
+                        </div>
+                        <div id="task-list"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="page-academic" class="page">
+        <nav class="internal-nav">
+            <button class="back-btn" onclick="navigate('page-home')">← Home</button>
+            <span class="page-title">01 // Academic</span>
+        </nav>
+
+        <header class="page-header-large">
+            <h1 class="page-header-title">Academic Core</h1>
+        </header>
+
+        <main class="workspace reveal-up">
+            <div class="grid-2">
+                <div>
+                    <div class="panel">
+                        <h3 class="panel-header">Semester 04 // Subjects</h3>
+                        <div class="list-item"><span class="mono text-sm">_ Embedded Systems</span></div>
+                        <div class="list-item"><span class="mono text-sm" style="color: var(--text-muted);">_ Signal
+                                Processing</span></div>
+                    </div>
+                    <div class="panel">
+                        <h3 class="panel-header">Resource Vault</h3>
+                        <div class="list-item"><span class="mono text-sm">📄 ARM_Cortex_M4.pdf</span> <button
+                                class="action-btn">Open</button></div>
+                        <div class="list-item"><span class="mono text-sm">📺 Interfacing Motors</span> <button
+                                class="action-btn">Play</button></div>
+                    </div>
+                </div>
+                <div>
+                    <textarea class="mono text-sm" placeholder="// Start typing scratchpad notes here..."></textarea>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="page-gate" class="page">
+        <nav class="internal-nav">
+            <button class="back-btn" onclick="navigate('page-home')">← Home</button>
+            <span class="page-title">02 // GATE</span>
+        </nav>
+
+        <header class="page-header-large">
+            <h1 class="page-header-title">GATE Tracker</h1>
+        </header>
+
+        <main class="workspace reveal-up">
+            <div class="grid-2">
+                <div class="panel">
+                    <h3 class="panel-header">Syllabus Completion</h3>
+                    <div class="list-item" style="opacity: 0.4;">
+                        <span><input type="checkbox" checked style="margin-right: 15px; accent-color: var(--accent);">
+                            Engineering Mathematics</span>
+                    </div>
+                    <div class="list-item">
+                        <span><input type="checkbox" style="margin-right: 15px; accent-color: var(--accent);"> Digital
+                            Logic Systems</span>
+                    </div>
+                    <div class="list-item">
+                        <span><input type="checkbox" style="margin-right: 15px; accent-color: var(--accent);"> Network
+                            Theory</span>
+                    </div>
+                </div>
+                <div class="panel">
+                    <h3 class="panel-header">Archive Vault</h3>
+                    <div class="list-item mono text-sm" style="cursor: pointer;">📁 Previous Year Papers (18-25)</div>
+                    <div class="list-item mono text-sm" style="cursor: pointer;">📁 Formula Cheat Sheets</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="page-projects" class="page">
+        <nav class="internal-nav">
+            <button class="back-btn" onclick="navigate('page-home')">← Home</button>
+            <span class="page-title">03 // Projects</span>
+        </nav>
+
+        <header class="page-header-large">
+            <h1 class="page-header-title">Hardware Projects</h1>
+        </header>
+
+        <main class="workspace reveal-up">
+            <div class="grid-3">
+                <div class="panel" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                    <h3 class="panel-header" style="border-bottom: none; color: var(--text-muted);">● Conception</h3>
+                    <div class="list-item" style="display: block;">
+                        <h4 style="margin-bottom: 5px; font-weight: 500;">Concept Engine</h4>
+                        <span class="text-sm" style="color: var(--text-muted);">Define goals and specs.</span>
+                    </div>
+                </div>
+                <div class="panel" style="border-top: 1px solid rgba(212, 154, 106, 0.5);">
+                    <h3 class="panel-header" style="border-bottom: none; color: var(--accent);">▲ Assembly</h3>
+                    <div class="list-item" style="display: block;">
+                        <h4 style="margin-bottom: 5px; font-weight: 500;">Micromouse Robot</h4>
+                        <span class="text-sm" style="color: var(--text-muted);">Tuning VL53L1X array.</span>
+                    </div>
+                </div>
+                <div class="panel" style="border-top: 1px solid rgba(255, 255, 255, 0.4);">
+                    <h3 class="panel-header" style="border-bottom: none; color: var(--text-main);">■ Realized</h3>
+                    <div class="list-item" style="display: block;">
+                        <h4 style="margin-bottom: 5px; font-weight: 500;">Perovskite Sim</h4>
+                        <span class="text-sm" style="color: var(--text-muted);">Emission color analysis.</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="page-media" class="page">
+        <nav class="internal-nav">
+            <button class="back-btn" onclick="navigate('page-home')">← Home</button>
+            <span class="page-title">04 // Matrix</span>
+        </nav>
+
+        <header class="page-header-large">
+            <h1 class="page-header-title">Logs & Task Matrix</h1>
+        </header>
+
+        <main class="workspace reveal-up">
+            <div class="grid-2">
+                <div class="panel">
+                    <h3 class="panel-header">Task Execution</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <input type="text" id="matrix-task-input" placeholder="Add task..."
+                            style="flex:1; padding: 12px;" onkeypress="if(event.key === 'Enter') addTask(true)">
+                        <button class="action-btn" onclick="addTask(true)">Push</button>
+                    </div>
+                    <div id="matrix-task-list"></div>
+                </div>
+                <div class="panel">
+                    <h3 class="panel-header">Consumption Log</h3>
+                    <div class="list-item">
+                        <span>Dark Matter (Blake Crouch)</span>
+                        <span class="mono text-xs"
+                            style="color: var(--accent); border: 1px solid var(--accent); padding: 4px 10px; border-radius: 20px;">READING</span>
+                    </div>
+                    <div class="list-item" style="opacity: 0.6;">
+                        <span>F1 Drive to Survive</span>
+                        <span class="mono text-xs"
+                            style="color: var(--text-muted); border: 1px solid rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px;">PLAN</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- 1. ROBUST TYPEWRITER EFFECT ---
+        const greetingText = "Hello, Kethan.";
+        const greetingContainer = document.getElementById('greeting-display');
+
+        // Setup internal spans safely
+        greetingContainer.innerHTML = '<span id="typed-chars"></span><span class="typewriter-cursor">|</span>';
+        const typedContainer = document.getElementById('typed-chars');
+        let charIndex = 0;
+
+        function typeWriter() {
+            if (charIndex < greetingText.length) {
+                typedContainer.textContent += greetingText.charAt(charIndex);
+                charIndex++;
+                const typingSpeed = Math.random() * 80 + 50;
+                setTimeout(typeWriter, typingSpeed);
+            } else {
+                document.getElementById('time-display').classList.add('visible');
+            }
+        }
+        setTimeout(typeWriter, 400);
+
+        // --- 2. TIME & CALENDAR LOGIC ---
+        function updateTimeAndCalendar() {
+            const now = new Date();
+            const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+            const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+            const dayName = days[now.getDay()];
+            const monthName = months[now.getMonth()];
+            const dateNum = now.getDate();
+            const timeString = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+
+            document.getElementById('time-display').innerText = `${dayName} // ${timeString} IST`;
+            document.getElementById('cal-date').innerText = `${dateNum} ${monthName}`;
+            document.getElementById('cal-day').innerText = `${dayName} // LOCAL`;
+        }
+        setInterval(updateTimeAndCalendar, 1000);
+        updateTimeAndCalendar();
+
+        // --- 3. PARALLAX FADE FIX ON SCROLL ---
+        window.addEventListener('scroll', () => {
+            const scrollPos = window.scrollY;
+            const hero = document.getElementById('hero-sec');
+            if (hero) {
+                const fadeLevel = Math.max(0, 1 - (scrollPos / 500));
+                hero.style.opacity = fadeLevel;
+                // Subtle push down to counter-act the scroll slightly for a float effect
+                hero.style.transform = `translateY(${scrollPos * 0.3}px)`;
+            }
+        });
+
+        // --- 4. DEEP NAVIGATION & CURTAIN SYSTEM ---
+        function navigate(targetPageId) {
+            const curtain = document.getElementById('curtain');
+            const pages = document.querySelectorAll('.page');
+            const targetPage = document.getElementById(targetPageId);
+            const activePage = document.querySelector('.page.active');
+
+            if (activePage) activePage.classList.add('exiting');
+
+            setTimeout(() => { curtain.style.top = '0'; }, 150);
+
+            setTimeout(() => {
+                pages.forEach(p => { p.classList.remove('active'); p.classList.remove('exiting'); });
+                targetPage.classList.add('active');
+                window.scrollTo({ top: 0, behavior: 'instant' });
+                initScrollObserver();
+            }, 850);
+
+            setTimeout(() => {
+                curtain.style.top = '-100%';
+                setTimeout(() => {
+                    curtain.style.transition = 'none';
+                    curtain.style.top = '100%';
+                    void curtain.offsetWidth;
+                    curtain.style.transition = 'top 0.7s cubic-bezier(0.77, 0, 0.175, 1)';
+                }, 700);
+            }, 1350);
+        }
+
+        // --- 5. APPLE-STYLE SCROLL REVEAL ---
+        function initScrollObserver() {
+            document.querySelectorAll('.reveal-up').forEach(el => el.classList.remove('visible'));
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) { entry.target.classList.add('visible'); }
+                });
+            }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+
+            document.querySelectorAll('.page.active .reveal-up').forEach(element => { observer.observe(element); });
+        }
+
+        // --- 6. TASK MANAGER LOGIC ---
+        let dailyTasks = JSON.parse(localStorage.getItem('core_os_daily_tasks')) || [
+            { text: "Submit Project Schema", done: false },
+            { text: "Review GATE aptitude", done: false },
+            { text: "Calibrate IMU sensor", done: true }
+        ];
+
+        function renderTasks() {
+            const listHome = document.getElementById('task-list');
+            const listMatrix = document.getElementById('matrix-task-list');
+
+            const html = dailyTasks.map((task, index) => {
+                return `
+                    <div class="list-item" style="opacity: ${task.done ? '0.4' : '1'};">
+                        <span style="flex: 1; word-break: break-word;">
+                            <input type="checkbox" style="margin-right: 15px; accent-color: var(--accent);" 
+                                   ${task.done ? 'checked' : ''} 
+                                   onchange="toggleTask(${index})"> 
+                            ${task.done ? `<del>${task.text}</del>` : task.text}
+                        </span>
+                        <button class="back-btn" style="color: rgba(255,100,100,0.8); font-size: 1.2rem; padding: 0 5px;" onclick="deleteTask(${index})">×</button>
+                    </div>
+                `;
+            }).join('');
+
+            if (listHome) listHome.innerHTML = html;
+            if (listMatrix) listMatrix.innerHTML = html;
+        }
+
+        function saveTasks() {
+            localStorage.setItem('core_os_daily_tasks', JSON.stringify(dailyTasks));
+            if (typeof notifySyncEngineOfChange === 'function') notifySyncEngineOfChange();
+        }
+
+        function addTask(fromMatrix = false) {
+            const inputId = fromMatrix ? 'matrix-task-input' : 'task-input';
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const text = input.value.trim();
+            if (text) {
+                dailyTasks.unshift({ text: text, done: false });
+                input.value = '';
+                renderTasks();
+                saveTasks();
+            }
+        }
+
+        function toggleTask(index) {
+            dailyTasks[index].done = !dailyTasks[index].done;
+            renderTasks();
+            saveTasks();
+        }
+
+        function deleteTask(index) {
+            dailyTasks.splice(index, 1);
+            renderTasks();
+            saveTasks();
+        }
+
+        // --- 7. NETFLIX-STYLE PAGE TRANSITION ---
+        function netflixTransition(event, url) {
+            event.preventDefault();
+            const btn = event.currentTarget;
+            const rect = btn.getBoundingClientRect();
+
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0'; overlay.style.left = '0';
+            overlay.style.width = '100vw'; overlay.style.height = '100vh';
+            overlay.style.backgroundColor = '#000';
+            overlay.style.opacity = '0';
+            overlay.style.zIndex = '99990';
+            overlay.style.transition = 'opacity 1.2s ease';
+            overlay.style.pointerEvents = 'none';
+            document.body.appendChild(overlay);
+
+            const clone = btn.cloneNode(true);
+            clone.style.position = 'fixed';
+            clone.style.top = rect.top + 'px';
+            clone.style.left = rect.left + 'px';
+            clone.style.width = rect.width + 'px';
+            clone.style.height = rect.height + 'px';
+            clone.style.margin = '0';
+            clone.style.zIndex = '99999';
+            clone.style.color = 'var(--accent)';
+            clone.style.background = 'transparent';
+            clone.style.boxShadow = 'none';
+            clone.style.border = 'none';
+            clone.style.textShadow = '0 0 20px var(--accent)';
+            clone.style.transformOrigin = 'center center';
+            clone.style.transition = 'transform 1.8s cubic-bezier(0.5, 0, 0.1, 1), opacity 1s ease 0.6s';
+            clone.style.pointerEvents = 'none';
+            document.body.appendChild(clone);
+
+            btn.style.opacity = '0';
+
+            setTimeout(() => {
+                overlay.style.opacity = '1';
+                const moveX = (window.innerWidth / 2) - (rect.left + rect.width / 2);
+                const moveY = (window.innerHeight / 2) - (rect.top + rect.height / 2);
+                clone.style.transform = `translate(${moveX}px, ${moveY}px) scale(35)`;
+                clone.style.opacity = '0';
+            }, 10);
+
+            setTimeout(() => {
+                window.location.href = url;
+            }, 1500);
+        }
+
+        function checkEnter(event) {
+            if (event.key === 'Enter') addTask();
+        }
+
+        window.onCloudSyncData = function () {
+            dailyTasks = JSON.parse(localStorage.getItem('core_os_daily_tasks')) || [];
+            renderTasks();
+        };
+
+        window.onload = () => {
+            initScrollObserver();
+            renderTasks();
+        };
+    </script>
+    <script src="sync.js"></script>
+</body>
+
+</html>
