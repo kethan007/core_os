@@ -1051,9 +1051,13 @@
             else {
                 if (currentState.mode === 'subject') {
                     let arr = db.subjects[currentState.activeId].chapters[currentState.activeChId].resources;
+                    let resToDelete = arr.find(r => r.id === id);
+                    if (resToDelete && resToDelete.url && typeof deleteFileFromDrive === 'function') deleteFileFromDrive(resToDelete.url);
                     db.subjects[currentState.activeId].chapters[currentState.activeChId].resources = arr.filter(r => r.id !== id);
                 } else {
                     let arr = db.archives[currentState.activeId].resources;
+                    let resToDelete = arr.find(r => r.id === id);
+                    if (resToDelete && resToDelete.url && typeof deleteFileFromDrive === 'function') deleteFileFromDrive(resToDelete.url);
                     db.archives[currentState.activeId].resources = arr.filter(r => r.id !== id);
                 }
             }

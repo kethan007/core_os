@@ -1052,6 +1052,8 @@
             else if (type === 'window') delete db[currentState.activeProjectId].windows[id];
             else if (type === 'item') {
                 let items = db[currentState.activeProjectId].windows[parentId].items;
+                let itemToDelete = items.find(i => i.id === id);
+                if (itemToDelete && itemToDelete.url && typeof deleteFileFromDrive === 'function') deleteFileFromDrive(itemToDelete.url);
                 db[currentState.activeProjectId].windows[parentId].items = items.filter(i => i.id !== id);
             }
             render();

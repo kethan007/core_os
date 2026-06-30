@@ -96,7 +96,7 @@ function handleAuthClick() {
     if (tokenClient) {
         if (accessToken === null) {
             // First time or token expired
-            tokenClient.requestAccessToken({ prompt: 'consent' });
+            tokenClient.requestAccessToken();
         } else {
             // Force sync if already connected
             startSyncRoutine();
@@ -339,6 +339,26 @@ async function uploadRawFileToDrive(file, fileName) {
         };
         reader.readAsDataURL(file);
     });
+}
+
+// Delete physical file from Drive
+async function deleteFileFromDrive(url) {
+    if (!accessToken || !url) return;
+
+    // Extract ID from url (e.g. https://drive.google.com/file/d/1X2Y.../view)
+    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (!match) return;
+    const fileId = match[1];
+
+    try {
+        await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        console.log('File deleted from Drive:', fileId);
+    } catch (err) {
+        console.error('Failed to delete file from Drive:', err);
+    }
 }
 
 // Hook into local changes (auto-sync trigger)

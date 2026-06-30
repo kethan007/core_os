@@ -895,6 +895,8 @@
             else if (type === 'subject') delete db[currentState.activeSemId].subjects[id];
             else if (type === 'resource') {
                 let resArray = db[currentState.activeSemId].subjects[currentState.activeSubId].resources[category];
+                let resToDelete = resArray.find(r => r.id === id);
+                if (resToDelete && resToDelete.url && typeof deleteFileFromDrive === 'function') deleteFileFromDrive(resToDelete.url);
                 db[currentState.activeSemId].subjects[currentState.activeSubId].resources[category] = resArray.filter(r => r.id !== id);
             }
             render();
